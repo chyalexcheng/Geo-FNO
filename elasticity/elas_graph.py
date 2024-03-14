@@ -47,9 +47,10 @@ class KernelNN3(torch.nn.Module):
 ################################################################
 # configs
 ################################################################
-PATH = '/home/wumming/Documents/GNN-PDE/graph-pde'
-INPUT_PATH = PATH+'/data/diffeo/Random_UnitCell_XY_10.npy'
-OUTPUT_PATH = PATH+'/data/diffeo/Random_UnitCell_sigma_10.npy'
+PATH = '/home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/2D_dike_stability/data_gen/sim_data/iter0'
+OUTPUT_PATH = PATH+'/output_features.npy'
+INPUT_PATH = PATH+'/input_coords.npy'
+INPUT_FEATURES = PATH+'/input_features.npy'
 
 ntrain = 1000
 ntest = 200

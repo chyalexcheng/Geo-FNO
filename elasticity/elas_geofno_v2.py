@@ -4,13 +4,16 @@ from timeit import default_timer
 from utilities3 import *
 from Adam import Adam
 
-def set_seed(seed):    
+
+def set_seed(seed):
     torch.manual_seed(seed)
     np.random.seed(seed)
     torch.cuda.manual_seed(seed)
 
+
 torch.backends.cudnn.deterministic = True
 set_seed(0)
+
 
 ################################################################
 # fourier layer
@@ -83,10 +86,11 @@ class SpectralConv2d(nn.Module):
         m2 = 2 * self.modes2 - 1
 
         # wavenumber (m1, m2)
-        k_x1 =  torch.cat((torch.arange(start=0, end=self.modes1, step=1), \
-                            torch.arange(start=-(self.modes1), end=0, step=1)), 0).reshape(m1,1).repeat(1,m2).to(device)
-        k_x2 =  torch.cat((torch.arange(start=0, end=self.modes2, step=1), \
-                            torch.arange(start=-(self.modes2-1), end=0, step=1)), 0).reshape(1,m2).repeat(m1,1).to(device)
+        k_x1 = torch.cat((torch.arange(start=0, end=self.modes1, step=1), \
+                          torch.arange(start=-(self.modes1), end=0, step=1)), 0).reshape(m1, 1).repeat(1, m2).to(device)
+        k_x2 = torch.cat((torch.arange(start=0, end=self.modes2, step=1), \
+                          torch.arange(start=-(self.modes2 - 1), end=0, step=1)), 0).reshape(1, m2).repeat(m1, 1).to(
+            device)
 
         # print(x_in.shape)
         if iphi == None:
@@ -96,8 +100,8 @@ class SpectralConv2d(nn.Module):
 
         # print(x.shape)
         # K = <y, k_x>,  (batch, N, m1, m2)
-        K1 = torch.outer(x[...,0].view(-1), k_x1.view(-1)).reshape(batchsize, N, m1, m2)
-        K2 = torch.outer(x[...,1].view(-1), k_x2.view(-1)).reshape(batchsize, N, m1, m2)
+        K1 = torch.outer(x[..., 0].view(-1), k_x1.view(-1)).reshape(batchsize, N, m1, m2)
+        K2 = torch.outer(x[..., 1].view(-1), k_x2.view(-1)).reshape(batchsize, N, m1, m2)
         K = K1 + K2
 
         # basis (batch, N, m1, m2)
@@ -120,10 +124,11 @@ class SpectralConv2d(nn.Module):
         m2 = 2 * self.modes2 - 1
 
         # wavenumber (m1, m2)
-        k_x1 =  torch.cat((torch.arange(start=0, end=self.modes1, step=1), \
-                            torch.arange(start=-(self.modes1), end=0, step=1)), 0).reshape(m1,1).repeat(1,m2).to(device)
-        k_x2 =  torch.cat((torch.arange(start=0, end=self.modes2, step=1), \
-                            torch.arange(start=-(self.modes2-1), end=0, step=1)), 0).reshape(1,m2).repeat(m1,1).to(device)
+        k_x1 = torch.cat((torch.arange(start=0, end=self.modes1, step=1), \
+                          torch.arange(start=-(self.modes1), end=0, step=1)), 0).reshape(m1, 1).repeat(1, m2).to(device)
+        k_x2 = torch.cat((torch.arange(start=0, end=self.modes2, step=1), \
+                          torch.arange(start=-(self.modes2 - 1), end=0, step=1)), 0).reshape(1, m2).repeat(m1, 1).to(
+            device)
 
         if iphi == None:
             x = x_out
@@ -131,8 +136,8 @@ class SpectralConv2d(nn.Module):
             x = iphi(x_out, code)
 
         # K = <y, k_x>,  (batch, N, m1, m2)
-        K1 = torch.outer(x[:,:,0].view(-1), k_x1.view(-1)).reshape(batchsize, N, m1, m2)
-        K2 = torch.outer(x[:,:,1].view(-1), k_x2.view(-1)).reshape(batchsize, N, m1, m2)
+        K1 = torch.outer(x[:, :, 0].view(-1), k_x1.view(-1)).reshape(batchsize, N, m1, m2)
+        K2 = torch.outer(x[:, :, 1].view(-1), k_x2.view(-1)).reshape(batchsize, N, m1, m2)
         K = K1 + K2
 
         # basis (batch, N, m1, m2)
@@ -248,6 +253,7 @@ class FNO2d(nn.Module):
         gridy = gridy.reshape(1, 1, size_y, 1).repeat([batchsize, size_x, 1, 1])
         return torch.cat((gridx, gridy), dim=-1).to(device)
 
+
 class IPHI(nn.Module):
     def __init__(self, width=32):
         super(IPHI, self).__init__()
@@ -257,34 +263,36 @@ class IPHI(nn.Module):
         self.width = width
         self.fc0 = nn.Linear(4, self.width)
         self.fc_code = nn.Linear(42, self.width)
-        self.fc_no_code = nn.Linear(3*self.width, 4*self.width)
-        self.fc1 = nn.Linear(4*self.width, 4*self.width)
-        self.fc2 = nn.Linear(4*self.width, 4*self.width)
-        self.fc3 = nn.Linear(4*self.width, 2)
-        self.center = torch.tensor([0.5,0.5], device="cuda").reshape(1,1,2)
+        self.fc_no_code = nn.Linear(3 * self.width, 4 * self.width)
+        self.fc1 = nn.Linear(4 * self.width, 4 * self.width)
+        self.fc2 = nn.Linear(4 * self.width, 4 * self.width)
+        self.fc3 = nn.Linear(4 * self.width, 2)
+        self.center = torch.tensor([0.5, 0.5], device="cuda").reshape(1, 1, 2)
 
-        self.B = np.pi*torch.pow(2, torch.arange(0, self.width//4, dtype=torch.float, device="cuda")).reshape(1,1,1,self.width//4)
+        self.B = np.pi * torch.pow(2, torch.arange(0, self.width // 4, dtype=torch.float, device="cuda")).reshape(1, 1,
+                                                                                                                  1,
+                                                                                                                  self.width // 4)
 
     def forward(self, x, code=None):
         # x (batch, N_grid, 2)
         # code (batch, N_features)
 
         # some feature engineering
-        angle = torch.atan2(x[:,:,1] - self.center[:,:, 1], x[:,:,0] - self.center[:,:, 0])
+        angle = torch.atan2(x[:, :, 1] - self.center[:, :, 1], x[:, :, 0] - self.center[:, :, 0])
         radius = torch.norm(x - self.center, dim=-1, p=2)
-        xd = torch.stack([x[:,:,0], x[:,:,1], angle, radius], dim=-1)
+        xd = torch.stack([x[:, :, 0], x[:, :, 1], angle, radius], dim=-1)
 
         # sin features from NeRF
         b, n, d = xd.shape[0], xd.shape[1], xd.shape[2]
-        x_sin = torch.sin(self.B * xd.view(b,n,d,1)).view(b,n,d*self.width//4)
-        x_cos = torch.cos(self.B * xd.view(b,n,d,1)).view(b,n,d*self.width//4)
+        x_sin = torch.sin(self.B * xd.view(b, n, d, 1)).view(b, n, d * self.width // 4)
+        x_cos = torch.cos(self.B * xd.view(b, n, d, 1)).view(b, n, d * self.width // 4)
         xd = self.fc0(xd)
-        xd = torch.cat([xd, x_sin, x_cos], dim=-1).reshape(b,n,3*self.width)
+        xd = torch.cat([xd, x_sin, x_cos], dim=-1).reshape(b, n, 3 * self.width)
 
-        if code!= None:
+        if code != None:
             cd = self.fc_code(code)
-            cd = cd.unsqueeze(1).repeat(1,xd.shape[1],1)
-            xd = torch.cat([cd,xd],dim=-1)
+            cd = cd.unsqueeze(1).repeat(1, xd.shape[1], 1)
+            xd = torch.cat([cd, xd], dim=-1)
         else:
             xd = self.fc_no_code(xd)
 
@@ -315,16 +323,17 @@ width = 32
 ################################################################
 # load data and data normalization
 ################################################################
-PATH_Sigma = './data/Random_UnitCell_sigma_10.npy'
-PATH_XY = './data/Random_UnitCell_XY_10.npy'
-PATH_rr = './data/Random_UnitCell_rr_10.npy'
+PATH = './'
+PATH_Sigma = PATH + '/data/Random_UnitCell_sigma_10.npy'
+PATH_XY = PATH + '/data/Random_UnitCell_XY_10.npy'
+PATH_rr = PATH + '/data/Random_UnitCell_rr_10.npy'
 
 input_rr = np.load(PATH_rr)
-input_rr = torch.tensor(input_rr, dtype=torch.float).permute(1,0)
+input_rr = torch.tensor(input_rr, dtype=torch.float).permute(1, 0)
 input_s = np.load(PATH_Sigma)
-input_s = torch.tensor(input_s, dtype=torch.float).permute(1,0).unsqueeze(-1)
+input_s = torch.tensor(input_s, dtype=torch.float).permute(1, 0).unsqueeze(-1)
 input_xy = np.load(PATH_XY)
-input_xy = torch.tensor(input_xy, dtype=torch.float).permute(2,0,1)
+input_xy = torch.tensor(input_xy, dtype=torch.float).permute(2, 0, 1)
 
 train_rr = input_rr[:ntrain]
 test_rr = input_rr[-ntest:]
@@ -335,8 +344,10 @@ test_xy = input_xy[-ntest:]
 
 print(train_rr.shape, train_s.shape, train_xy.shape)
 
-train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_rr, train_s, train_xy), batch_size=batch_size, shuffle=True) 
-test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(test_rr, test_s, test_xy), batch_size=batch_size, shuffle=False) 
+train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(train_rr, train_s, train_xy),
+                                           batch_size=batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(test_rr, test_s, test_xy),
+                                          batch_size=batch_size, shuffle=False)
 
 ################################################################
 # training and evaluation
@@ -346,9 +357,9 @@ model_iphi = IPHI().cuda()
 print(count_params(model), count_params(model_iphi))
 
 optimizer_fno = Adam(model.parameters(), lr=learning_rate_fno, weight_decay=1e-4)
-scheduler_fno = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_fno, T_max = 200)
+scheduler_fno = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_fno, T_max=200)
 optimizer_iphi = Adam(model_iphi.parameters(), lr=learning_rate_iphi, weight_decay=1e-4)
-scheduler_iphi = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_iphi, T_max = 200)
+scheduler_iphi = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_iphi, T_max=200)
 
 myloss = LpLoss(size_average=False)
 N_sample = 1000
@@ -388,9 +399,9 @@ for ep in range(epochs):
     t2 = default_timer()
     print(ep, t2 - t1, train_l2, test_l2)
 
-    if ep%100==0:
-        torch.save(model, '../model/elas_v2_'+str(ep))
-        torch.save(model_iphi, '../model/elas_v2_iphi_'+str(ep))
+    if ep % 100 == 0:
+        torch.save(model, '../model/elas_v2_' + str(ep))
+        torch.save(model_iphi, '../model/elas_v2_iphi_' + str(ep))
         XY = mesh[-1].squeeze().detach().cpu().numpy()
         truth = sigma[-1].squeeze().detach().cpu().numpy()
         pred = out[-1].squeeze().detach().cpu().numpy()
